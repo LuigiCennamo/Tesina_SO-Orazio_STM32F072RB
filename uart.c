@@ -51,7 +51,7 @@ struct UART* UART_init(const char* device __attribute__((unused)), uint32_t baud
 
   /* SETTAGGIO GPIOA PER UART2 */
   RCC->AHBENR |= RCC_AHBENR_GPIOAEN; //abilita clock ahb
-  GPIOA->AFR[0] |= 0x00001100; //imposta l'alternate function per il pin 3 e 2
+  GPIOA->AFR[0] |= 0x00001100; //imposta l'alternate function per il pin 3 e 2 PIN D0 E D1
   GPIOA->MODER |= GPIO_MODER_MODER2_1 | GPIO_MODER_MODER3_1; //seleziona modalità alternate function
   	  	  	  	  	  	  	  	  	  	  	  	  	  	  	 //per il pin PA2 (USART2_TX) e PA3 (USART2_RX)
   	/*SETTAGGIO USART2*/
