@@ -1,7 +1,7 @@
 #include "encoder.h"
 
 #define NUM_ENCODERS 2
-#define ENCODER_MASK 0x000001E0 // bit of PORT A used for encoders
+#define ENCODER_MASK 0x000001E0 // bits of PORT A used for encoders: from PA5 to PA8
 
 typedef struct{
   uint16_t current_value;
@@ -24,6 +24,7 @@ void Encoder_init(void){
 	EXTI->IMR |= EXTI_IMR_MR5 | EXTI_IMR_MR6 | EXTI_IMR_MR7 | EXTI_IMR_MR8; // enable interrupt musk
 	EXTI->RTSR |= EXTI_RTSR_TR5 | EXTI_RTSR_TR6 | EXTI_RTSR_TR7 | EXTI_RTSR_TR8; // enable interrupts on rising edge
 	EXTI->FTSR |= EXTI_FTSR_TR5 | EXTI_FTSR_TR6 | EXTI_FTSR_TR7 | EXTI_FTSR_TR8; // enable interrupts on falling edge
+	EXTI->PR |= ENCODER_MASK; // clear the pending interrupt bits
 	NVIC_EnableIRQ(EXTI4_15_IRQn);
 	NVIC_SetPriority(EXTI4_15_IRQn,0);
 	__enable_irq(); // turn on interrupts
@@ -71,6 +72,7 @@ static const int8_t _transition_table []=
 void EXTI4_15_IRQHandler(){
 	__disable_irq();
 	char port_value=GPIOA->IDR&ENCODER_MASK;
+	EXTI->PR |= ENCODER_MASK; // clear the pending interrupt bits
 	// encoder 0
 	uint8_t new_pin_state=port_value&0x3;
 	uint8_t idx=(_encoders[0].pin_state<<2)| new_pin_state ;

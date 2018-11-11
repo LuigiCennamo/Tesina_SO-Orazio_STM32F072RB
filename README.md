@@ -11,7 +11,7 @@ Mandatory header files are:
 	encoder.h
 	pins.h
 	pwm.h
-	tmer.h
+	timer.h
 	uart.h
 	stm32f0xx_it.h
 	stm32f0xx_flash.h
