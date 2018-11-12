@@ -15,13 +15,13 @@ void EEPROM_init(void){
 
 void EEPROM_read(void* dest_, const uint16_t src, uint16_t size){
   uint32_t s=(uint32_t)src+OFFSET;
-  uint16_t s_end=src+size;
-  uint32_t* dest;
-  dest_=(uint32_t*)dest_;
+  uint32_t s_end=src+OFFSET+(size*2);
+  uint16_t* dest=(uint16_t*)dest_;
+  //dest=(uint32_t*)dest_;
   while(s<s_end){
 	assert_param(IS_FLASH_PROGRAM_ADDRESS(Address));
-	*dest=(uint32_t*)s;
-    ++s;
+	*dest=*(uint16_t*)s;
+    s+=2;
     ++dest;
   }
 }
@@ -33,7 +33,7 @@ void EEPROM_write(uint16_t dest, const void* src_,  uint16_t size){
   while(s<s_end){
 	FLASH_ProgramHalfWord((uint32_t)dest+OFFSET,*s);
     ++s;
-    ++dest;
+    dest=dest+2;
   }
   FLASH_Lock();
 }
