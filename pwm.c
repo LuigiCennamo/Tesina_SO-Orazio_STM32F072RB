@@ -11,12 +11,12 @@ PWMError PWM_init(void){
 
   TIM2->DIER &= (~TIM_DIER_UIE);
   RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
-  RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;	// clock enable timer TIM14
+  RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;	// clock enable timer TIM2
   TIM2->CR1 = 0;
   TIM2->ARR = 0xFFFF;	// auto reload register value
   TIM2->PSC |= 0xBB80;	// 1 kHz (clock a 48 MHz)
 
-  __enable_irq();	// enable interrupt
+  __enable_irq();	// enable interrupts
 
   return PWMSuccess;
 }
@@ -28,6 +28,8 @@ uint8_t PWM_numChannels(void){
 
 // what was the period i set in the pwm subsystem
 // might only require to adjust the prescaler
+
+//verify if PWM is enabled
 PWMError PWM_isEnabled(uint8_t c) {
   if (c>=PINS_NUM)
     return PWMChannelOutOfBound;
@@ -48,19 +50,20 @@ PWMError PWM_enable(uint8_t c, uint8_t enable){
     return PWMChannelOutOfBound;
   *pin->dutyc_register=0;
   if (enable){
-	TIM2->CCER |= TIM_CCER_CC1E;	// signal output pin enable
-	TIM2->EGR = TIM_EGR_UG;	// initialize all registers before lets run the timer
-	TIM2->CR1 |= TIM_CR1_CEN;	// counter enable
+    TIM2->CCER |= TIM_CCER_CC1E;	// signal output pin enable
+    TIM2->EGR = TIM_EGR_UG;		// initialize all registers before lets run the timer
+    TIM2->CR1 |= TIM_CR1_CEN;		// counter enable
     *pin->ccm1_register |= pin->com_mask;
     *pin->dir_register |= ((1<<pin->bit*2)<<1);
     if(pin->bit<8)
-        *pin->afr_register[0]=0x0010;
-	else
-		*pin->afr_register[1]=0x0010;
-  } else {
-	TIM2->CCER &= ~TIM_CCER_CC1E;
-	TIM2->EGR &= ~TIM_EGR_UG;
-	TIM2->CR1 &= ~TIM_CR1_CEN;
+        *pin->afr_register[0]=0x0010;	//set alternate function for TIM2_CHx
+    else
+	*pin->afr_register[1]=0x0010;
+  } 
+  else {
+    TIM2->CCER &= ~TIM_CCER_CC1E;
+    TIM2->EGR &= ~TIM_EGR_UG;
+    TIM2->CR1 &= ~TIM_CR1_CEN;
     *pin->ccm1_register &= ~pin->com_mask;
     *pin->dir_register    &= ~((1<<pin->bit*2)<<1);
     if(pin->bit<8)
