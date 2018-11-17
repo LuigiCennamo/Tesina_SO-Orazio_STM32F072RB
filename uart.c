@@ -50,13 +50,13 @@ struct UART* UART_init(const char* device __attribute__((unused)), uint32_t baud
   uart->uart_num=0;
 
   /* SETTAGGIO GPIOA PER UART2 */
-  RCC->AHBENR |= RCC_AHBENR_GPIOAEN; //abilita clock ahb
-  GPIOA->AFR[0] |= 0x00001100; //imposta l'alternate function per il pin 3 e 2 PIN D0 E D1
-  GPIOA->MODER |= GPIO_MODER_MODER2_1 | GPIO_MODER_MODER3_1; //seleziona modalità alternate function
-  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	 //per il pin PA2 (USART2_TX) e PA3 (USART2_RX)
-  	/*SETTAGGIO USART2*/
-	RCC->APB1ENR |= RCC_APB1ENR_USART2EN;//abilitazione del bus sulla periferica
-	RCC->CFGR3 &= 0xFFFDFFFF; //selezione di HSI, clock interno a 48 MHz come clock del bus
+  RCC->AHBENR |= RCC_AHBENR_GPIOAEN; //clock AHB enable
+  GPIOA->AFR[0] |= 0x00001100; 	     //set alternate function for pin 3 and 2 PIN (D0 and D1)
+  GPIOA->MODER |= GPIO_MODER_MODER2_1 | GPIO_MODER_MODER3_1; //set alternate function mode for pin PA2 (USART2_TX) and PA3 (USART2_RX)
+   
+  /*SETTAGGIO USART2*/
+  RCC->APB1ENR |= RCC_APB1ENR_USART2EN;	//bus enable on peripheral
+  RCC->CFGR3 &= 0xFFFDFFFF; 		//HSI select, 48 MHz internal clock (the bus as well)
 
   switch(baud){
   case 57600: setBaud57600(); break;
@@ -104,47 +104,46 @@ int UART_txBufferFree(UART* uart){
 void UART_putChar(struct UART* uart, uint8_t c) {
   // loops until there is some space in the buffer
   while (uart->tx_size>=UART_BUFFER_SIZE);
-  __disable_irq();
+    __disable_irq();
     uart->tx_buffer[uart->tx_end]=c;
     BUFFER_PUT(uart->tx, UART_BUFFER_SIZE);
     USART2->CR1 |= USART_CR1_TXEIE; // enable transmit interrupt
-  __enable_irq();
+    __enable_irq();
 }
 
 uint8_t UART_getChar(struct UART* uart){
   while(uart->rx_size==0);
-  uint8_t c;
-  __disable_irq();
+     uint8_t c;
+     __disable_irq();
      c=uart->rx_buffer[uart->rx_start];
-    BUFFER_GET(uart->rx, UART_BUFFER_SIZE);
-  __enable_irq();
+     BUFFER_GET(uart->rx, UART_BUFFER_SIZE);
+     __enable_irq();
 
   return c;
 }
 
-
 void USART2_IRQHandler() {
-
-	/*handler di ricezione*/
-	if((USART2->ISR & USART_ISR_RXNE) == USART_ISR_RXNE)
-	{
-		uint8_t c=USART2->RDR;
-		if (uart_0.rx_size<UART_BUFFER_SIZE){
-			uart_0.rx_buffer[uart_0.rx_end] = c;
-			BUFFER_PUT(uart_0.rx, UART_BUFFER_SIZE);
-		}
-	}
-	else if((USART2->ISR & USART_ISR_TXE) == USART_ISR_TXE)
-	{
-		if (! uart_0.tx_size)
-		{
-			USART2->CR1 &= ~USART_CR1_TXEIE; // disable transmit interrupt
-		}
-		else
-		{
-		    USART2->TDR = uart_0.tx_buffer[uart_0.tx_start];
-		    BUFFER_GET(uart_0.tx, UART_BUFFER_SIZE);
-		}
-	}
-	else{}	// RESTITUISCI UNA QUALCHE CONDIZIONE DI ERRORE
+  //reciving handler
+  if((USART2->ISR & USART_ISR_RXNE) == USART_ISR_RXNE)
+  {
+     uint8_t c=USART2->RDR;
+     if (uart_0.rx_size<UART_BUFFER_SIZE){
+        uart_0.rx_buffer[uart_0.rx_end] = c;
+        BUFFER_PUT(uart_0.rx, UART_BUFFER_SIZE);
+     }
+   }
+   //transmitting handler
+   else if((USART2->ISR & USART_ISR_TXE) == USART_ISR_TXE)
+   {
+      if (! uart_0.tx_size)
+      {
+	USART2->CR1 &= ~USART_CR1_TXEIE; // disable transmit interrupt
+      }
+      else
+      {
+	USART2->TDR = uart_0.tx_buffer[uart_0.tx_start];
+	BUFFER_GET(uart_0.tx, UART_BUFFER_SIZE);
+      }
+    }
+    else{}	// RESTITUISCI UNA QUALCHE CONDIZIONE DI ERRORE
 }
