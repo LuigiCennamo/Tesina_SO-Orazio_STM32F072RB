@@ -71,15 +71,15 @@ static const int8_t _transition_table []=
 
 void EXTI4_15_IRQHandler(){
 	__disable_irq();
-	char port_value=GPIOA->IDR&ENCODER_MASK;
+	short port_value=GPIOA->IDR&ENCODER_MASK;
 	EXTI->PR |= ENCODER_MASK; // clear the pending interrupt bits
 	// encoder 0
-	uint8_t new_pin_state=port_value&0x3;
+	uint8_t new_pin_state=(uint8_t)((port_value>>5) & 0x03);
 	uint8_t idx=(_encoders[0].pin_state<<2)| new_pin_state ;
 	_encoders[0].current_value+=_transition_table[idx];
 	_encoders[0].pin_state=new_pin_state;
 	//encoder 1
-	new_pin_state=port_value>>2;
+	new_pin_state=(uint8_t)(port_value>>7);
 	idx=(_encoders[1].pin_state<<2)| new_pin_state ;
 	_encoders[1].current_value+=_transition_table[idx];
 	_encoders[1].pin_state=new_pin_state;
